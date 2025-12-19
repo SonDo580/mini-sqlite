@@ -1,0 +1,1 @@
+gcc db.c -o db.o
