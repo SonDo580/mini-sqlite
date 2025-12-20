@@ -1,4 +1,8 @@
 describe "database" do
+  before do
+    `rm -rf test.db`
+  end
+
   def run_script(commands)
     raw_output = nil
 
@@ -6,7 +10,7 @@ describe "database" do
     # "r+" give us a bidirectional pipe
     # - write to process's stdin
     # - read from process's stdout
-    IO.popen("./db.o", "r+") do |pipe|
+    IO.popen("./db.o test.db", "r+") do |pipe|
       # Send each command to DB process via stdin
       commands.each do |command|
         pipe.puts command 
@@ -24,14 +28,42 @@ describe "database" do
   end
 
   it 'insert and retrieve a row' do
+    id = 1
+    username = "user1"
+    email = "user1@x.com"
     result = run_script([
-      "insert 1 user1 user1@x.com",
+      "insert #{id} #{username} #{email}",
       "select",
       ".exit"
     ])
     expect(result).to match_array([
       "db > Executed.",
-      "db > (1, user1, user1@x.com)",
+      "db > (#{id}, #{username}, #{email})",
+      "Executed.",
+      "db > ",
+    ])
+  end
+
+  it 'keep data after closing connection' do
+    id = 1
+    username = "user1"
+    email = "user1@x.com"
+
+    result1 = run_script([
+      "insert #{id} #{username} #{email}",
+      ".exit"
+    ])
+    expect(result1).to match_array([
+      "db > Executed.",
+      "db > ",
+    ])
+
+    result2 = run_script([
+      "select",
+      ".exit"
+    ])
+    expect(result2).to match_array([
+      "db > (#{id}, #{username}, #{email})",
       "Executed.",
       "db > ",
     ])
@@ -54,27 +86,29 @@ describe "database" do
   end
 
   it 'allow inserting strings with maximum length' do
+    id = 1
     username = "a"*32
     email = "a"*255
     script = [
-      "insert 1 #{username} #{email}",
+      "insert #{id} #{username} #{email}",
       "select",
       ".exit",
     ]
     result = run_script(script)
     expect(result).to match_array([
       "db > Executed.",
-      "db > (1, #{username}, #{email})",
+      "db > (#{id}, #{username}, #{email})",
       "Executed.",
       "db > ",
     ])
   end
 
   it 'print error if strings are too long' do
+    id = 1
     username = "a"*33
     email = "a"*256
     script = [
-      "insert 1 #{username} #{email}",
+      "insert #{id} #{username} #{email}",
       "select",
       ".exit",
     ]
