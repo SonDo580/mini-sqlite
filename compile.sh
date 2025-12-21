@@ -1,1 +1,1 @@
-gcc db.c -o db.o
+gcc -g db.c -o db.o

@@ -153,12 +153,12 @@ describe "database" do
     ])
   end
 
-  it 'print structure of a 1-node btree' do
+  it 'print structure of a 1-node btree (keys should be sorted)' do
     script = [3, 1, 2].map do |i|
       "insert #{i} user#{i} user#{i}@x.com"
     end
-    script << '.btree'
-    script << '.exit'
+    script << ".btree"
+    script << ".exit"
     result = run_script(script)
 
     expect(result).to match_array([
@@ -167,9 +167,31 @@ describe "database" do
       "db > Executed.",
       "db > Tree:",
       "leaf (size 3)",
-      " - 0 : 3",
-      " - 1 : 1",
-      " - 2 : 2",
+      " - 0 : 1",
+      " - 1 : 2",
+      " - 2 : 3",
+      "db > ",
+    ])
+  end
+
+  it 'print error if id is duplicate' do
+    id = 1 
+    username = "user1"
+    email = "user1@x.com"
+    insert_stmt = "insert #{id} #{username} #{email}"
+    script = [
+      insert_stmt,
+      insert_stmt,
+      "select",
+      ".exit",
+    ]
+    result = run_script(script)
+
+    expect(result).to match_array([
+      "db > Executed.",
+      "db > Error: Duplicate key.",
+      "db > (#{id}, #{username}, #{email})",
+      "Executed.",
       "db > "
     ])
   end
